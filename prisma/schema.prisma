@@ -1,0 +1,172 @@
+// Restaurant POS + Stock Management - PostgreSQL Schema
+// All queries use Prisma (parameterized) - no raw SQL string building
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- RBAC ---
+enum RoleName {
+  ADMIN
+  CASHIER
+}
+
+model Role {
+  id        String   @id @default(uuid())
+  name      RoleName @unique
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // bcrypt hash only - never returned in API
+  fullName  String
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+
+  @@index([email])
+  @@index([roleId])
+}
+
+// --- Products (Dishes) ---
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  price       Decimal  @db.Decimal(10, 2)
+  recipeId    String   @unique
+  recipe      Recipe   @relation(fields: [recipeId], references: [id], onDelete: Restrict)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems OrderItem[]
+
+  @@index([name])
+  @@index([recipeId])
+  @@index([isActive])
+}
+
+// --- Recipes & Ingredients ---
+model Recipe {
+  id                String            @id @default(uuid())
+  name              String
+  product           Product?
+  recipeIngredients RecipeIngredient[]
+
+  @@index([name])
+}
+
+model Ingredient {
+  id                String            @id @default(uuid())
+  name              String            @unique
+  unit              String            // e.g. "g", "kg", "unit"
+  recipeIngredients RecipeIngredient[]
+  stock             Stock?
+
+  @@index([name])
+}
+
+model RecipeIngredient {
+  id           String     @id @default(uuid())
+  recipeId     String
+  ingredientId String
+  quantityGrams Decimal   @db.Decimal(12, 4) // quantity per one dish (e.g. 300g chicken per dish)
+  recipe       Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+
+  @@unique([recipeId, ingredientId])
+  @@index([recipeId])
+  @@index([ingredientId])
+}
+
+// --- Stock ---
+model Stock {
+  id           String   @id @default(uuid())
+  ingredientId String  @unique
+  quantityGrams Decimal @db.Decimal(14, 4) @default(0)
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  updatedAt    DateTime @updatedAt
+
+  movements StockMovement[]
+
+  @@index([ingredientId])
+  @@index([quantityGrams])
+}
+
+enum StockMovementType {
+  DELIVERY   // supplier delivery
+  SALE       // automatic deduction from POS
+  ADJUSTMENT // manual (loss/waste/correction)
+}
+
+model StockMovement {
+  id          String           @id @default(uuid())
+  stockId     String
+  type        StockMovementType
+  quantityGrams Decimal        @db.Decimal(14, 4) // positive = add, negative = deduct
+  reference   String?          // e.g. orderId for SALE
+  note        String?
+  createdAt   DateTime         @default(now())
+  stock       Stock            @relation(fields: [stockId], references: [id], onDelete: Cascade)
+
+  @@index([stockId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// --- Orders (POS) ---
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  // CARD, etc. extendable later
+}
+
+model Order {
+  id            String        @id @default(uuid())
+  status        OrderStatus   @default(PENDING)
+  paymentMethod PaymentMethod?
+  totalAmount   Decimal?      @db.Decimal(10, 2)
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  items OrderItem[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Decimal  @db.Decimal(10, 2)
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([productId])
+}
