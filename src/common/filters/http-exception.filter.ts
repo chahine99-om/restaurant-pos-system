@@ -35,9 +35,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? (message as { message?: string | string[] })
         : { message };
 
-    // Log server-side only (no sensitive data)
+    // Log server-side only: method, path, status, error message. Never log body, headers, or tokens.
+    const path = request.url?.split('?')[0] ?? request.url;
     this.logger.warn(
-      `${request.method} ${request.url} ${status} - ${JSON.stringify(body)}`,
+      `${request.method} ${path} ${status} - ${JSON.stringify(body)}`,
     );
 
     response.status(status).json({

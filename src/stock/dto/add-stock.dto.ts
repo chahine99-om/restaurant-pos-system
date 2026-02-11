@@ -1,4 +1,5 @@
-import { IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsString, IsUUID, MaxLength, Min } from 'class-validator';
+import { Trim } from '../../common/transformers/trim.transformer';
 
 export class AddStockDto {
   @IsUUID()
@@ -9,6 +10,8 @@ export class AddStockDto {
   quantityGrams: number;
 
   @IsOptional()
+  @Trim()
   @IsString()
+  @MaxLength(500)
   note?: string;
 }

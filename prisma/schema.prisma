@@ -174,3 +174,18 @@ model OrderItem {
   @@index([orderId])
   @@index([productId])
 }
+
+// --- Audit log (critical actions only; no passwords/tokens in metadata) ---
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String?
+  action       String   // e.g. ORDER_CREATED, ORDER_CONFIRMED, STOCK_ADD, STOCK_ADJUST, STOCK_DEDUCT
+  resourceType String   // e.g. order, stock
+  resourceId   String?
+  metadata     Json?    // non-sensitive details only
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}

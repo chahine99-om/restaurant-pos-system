@@ -1,12 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { StockMovementType } from '@prisma/client';
+import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AddStockDto } from './dto/add-stock.dto';
 import { AdjustStockDto } from './dto/adjust-stock.dto';
 
 @Injectable()
 export class StockService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   async findAll() {
     return this.prisma.stock.findMany({
@@ -26,7 +30,7 @@ export class StockService {
   }
 
   /** Supplier delivery - add stock and record movement. */
-  async addStock(dto: AddStockDto) {
+  async addStock(dto: AddStockDto, userId?: string) {
     const stock = await this.getStockByIngredientId(dto.ingredientId);
     const qty = dto.quantityGrams;
     await this.prisma.$transaction([
@@ -43,6 +47,13 @@ export class StockService {
         },
       }),
     ]);
+    await this.audit.log({
+      userId,
+      action: 'STOCK_ADD',
+      resourceType: 'stock',
+      resourceId: stock.id,
+      metadata: { ingredientId: dto.ingredientId, quantityGrams: qty },
+    });
     return this.prisma.stock.findUnique({
       where: { id: stock.id },
       include: { ingredient: true },
@@ -50,7 +61,7 @@ export class StockService {
   }
 
   /** Manual adjustment (loss/waste). */
-  async adjustStock(dto: AdjustStockDto) {
+  async adjustStock(dto: AdjustStockDto, userId?: string) {
     const stock = await this.getStockByIngredientId(dto.ingredientId);
     const qty = dto.quantityGrams;
     const current = await this.prisma.stock.findUnique({ where: { id: stock.id } });
@@ -71,6 +82,13 @@ export class StockService {
         },
       }),
     ]);
+    await this.audit.log({
+      userId,
+      action: 'STOCK_ADJUST',
+      resourceType: 'stock',
+      resourceId: stock.id,
+      metadata: { ingredientId: dto.ingredientId, quantityGrams: qty },
+    });
     return this.prisma.stock.findUnique({
       where: { id: stock.id },
       include: { ingredient: true },
@@ -84,6 +102,7 @@ export class StockService {
   async deductForSale(
     ingredientQuantities: { ingredientId: string; quantityGrams: number }[],
     orderId: string,
+    userId?: string,
   ) {
     for (const { ingredientId, quantityGrams } of ingredientQuantities) {
       const stock = await this.getStockByIngredientId(ingredientId);
@@ -102,6 +121,13 @@ export class StockService {
         }),
       ]);
     }
+    await this.audit.log({
+      userId,
+      action: 'STOCK_DEDUCT',
+      resourceType: 'order',
+      resourceId: orderId,
+      metadata: { ingredientCount: ingredientQuantities.length },
+    });
   }
 
   /** Low-stock: ingredients below optional threshold (e.g. 1000g). */

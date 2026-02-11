@@ -1,7 +1,10 @@
 import { IsEmail, IsString, MinLength, MaxLength } from 'class-validator';
+import { Trim } from '../../common/transformers/trim.transformer';
 
 export class RegisterDto {
+  @Trim()
   @IsEmail()
+  @MaxLength(255)
   email: string;
 
   @IsString()
@@ -9,6 +12,7 @@ export class RegisterDto {
   @MaxLength(100)
   password: string;
 
+  @Trim()
   @IsString()
   @MinLength(1)
   @MaxLength(200)

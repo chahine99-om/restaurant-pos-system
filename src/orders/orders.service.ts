@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { OrderStatus, PaymentMethod } from '@prisma/client';
+import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StockService } from '../stock/stock.service';
 import { AvailabilityService } from '../availability/availability.service';
@@ -12,6 +13,7 @@ export class OrdersService {
     private readonly prisma: PrismaService,
     private readonly stockService: StockService,
     private readonly availabilityService: AvailabilityService,
+    private readonly audit: AuditService,
   ) {}
 
   async create(dto: CreateOrderDto, userId: string) {
@@ -57,6 +59,13 @@ export class OrdersService {
       where: { id: order.id },
       data: { totalAmount: total },
     });
+    await this.audit.log({
+      userId,
+      action: 'ORDER_CREATED',
+      resourceType: 'order',
+      resourceId: order.id,
+      metadata: { itemCount: order.items.length },
+    });
     return this.findOne(order.id);
   }
 
@@ -83,13 +92,20 @@ export class OrdersService {
       ingredientId,
       quantityGrams,
     }));
-    await this.stockService.deductForSale(arr, orderId);
+    await this.stockService.deductForSale(arr, orderId, order.userId);
     await this.prisma.order.update({
       where: { id: orderId },
       data: {
         status: OrderStatus.CONFIRMED,
         paymentMethod: dto.paymentMethod,
       },
+    });
+    await this.audit.log({
+      userId: order.userId,
+      action: 'ORDER_CONFIRMED',
+      resourceType: 'order',
+      resourceId: orderId,
+      metadata: { paymentMethod: dto.paymentMethod },
     });
     return this.findOne(orderId);
   }

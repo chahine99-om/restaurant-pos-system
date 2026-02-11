@@ -10,10 +10,26 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<{ message: string; verificationLink?: string } | null>(null);
 
+  function validate(): string | null {
+    const trimmedName = fullName.trim();
+    const trimmedEmail = email.trim();
+    if (!trimmedName || trimmedName.length > 200) return 'Full name must be 1–200 characters.';
+    if (!trimmedEmail) return 'Email is required.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) return 'Enter a valid email address.';
+    if (password.length < 8) return 'Password must be at least 8 characters.';
+    if (password.length > 100) return 'Password must be at most 100 characters.';
+    return null;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setSuccess(null);
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setLoading(true);
     try {
       const data = await apiRegister(email.trim(), password, fullName.trim());
@@ -55,6 +71,8 @@ export default function Register() {
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             required
+            maxLength={200}
+            autoComplete="name"
             style={{ width: '100%', padding: 8, boxSizing: 'border-box' }}
           />
         </div>
@@ -65,17 +83,21 @@ export default function Register() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            maxLength={255}
+            autoComplete="email"
             style={{ width: '100%', padding: 8, boxSizing: 'border-box' }}
           />
         </div>
         <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', marginBottom: 4 }}>Password (min 8 characters)</label>
+          <label style={{ display: 'block', marginBottom: 4 }}>Password (8–100 characters)</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={8}
+            maxLength={100}
+            autoComplete="new-password"
             style={{ width: '100%', padding: 8, boxSizing: 'border-box' }}
           />
         </div>

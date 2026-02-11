@@ -75,12 +75,18 @@ API base: `http://localhost:3000`
 
 ## Security (OWASP)
 
-- Input validation (class-validator) on all DTOs; whitelist + forbidNonWhitelisted.
-- Parameterized queries only (Prisma, no raw SQL).
-- Rate limiting on all endpoints (Throttler).
-- JWT short-lived; passwords hashed with bcrypt.
-- RBAC: Admin (full), Cashier (POS + own orders).
-- CORS from env; Helmet; centralized error filter (no stack/sensitive data in responses).
+See **[SECURITY.md](./SECURITY.md)** for the full list. Summary:
+
+- **Input sanitization & validation:** All inputs trimmed and validated (type, length, format) on backend (class-validator DTOs) and frontend (forms). Query params validated and bounded.
+- **SQL injection:** Parameterized queries only (Prisma, no raw SQL).
+- **Rate limiting:** Every API endpoint (Throttler). Brute-force protection.
+- **Secrets:** Environment variables only; no hardcoded credentials.
+- **Passwords:** bcrypt hashing; never returned or logged.
+- **RBAC:** Admin / Cashier; deny by default.
+- **JWT:** Short-lived tokens; validated on each request.
+- **CORS:** Strict origins from env; Helmet for headers.
+- **Logging:** No sensitive data; centralized error filter.
+- **Audit logs:** Orders and stock changes (see AuditLog table).
 
 ## Project Structure
 

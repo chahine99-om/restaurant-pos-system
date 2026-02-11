@@ -43,6 +43,8 @@ export default function Login({ onSuccess }: { onSuccess: () => void }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            maxLength={255}
+            autoComplete="email"
             style={{ width: '100%', padding: 8, boxSizing: 'border-box' }}
           />
         </div>
@@ -53,6 +55,9 @@ export default function Login({ onSuccess }: { onSuccess: () => void }) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            minLength={8}
+            maxLength={100}
+            autoComplete="current-password"
             style={{ width: '100%', padding: 8, boxSizing: 'border-box' }}
           />
         </div>

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { RoleName } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -20,22 +20,25 @@ export class StockController {
 
   @Get('movements')
   getMovements(@Query('ingredientId') ingredientId?: string, @Query('limit') limit?: string) {
-    return this.stockService.getMovements(ingredientId, limit ? parseInt(limit, 10) : 50);
+    const parsed = limit ? parseInt(limit, 10) : 50;
+    const safeLimit = Number.isNaN(parsed) ? 50 : Math.min(Math.max(1, parsed), 100);
+    return this.stockService.getMovements(ingredientId, safeLimit);
   }
 
   @Get('low')
   getLowStock(@Query('threshold') threshold?: string) {
-    const thresholdGrams = threshold ? parseFloat(threshold) : 1000;
-    return this.stockService.getLowStock(thresholdGrams);
+    const parsed = threshold ? parseFloat(threshold) : 1000;
+    const safeThreshold = Number.isNaN(parsed) ? 1000 : Math.min(Math.max(0, parsed), 1_000_000);
+    return this.stockService.getLowStock(safeThreshold);
   }
 
   @Post('add')
-  addStock(@Body() dto: AddStockDto) {
-    return this.stockService.addStock(dto);
+  addStock(@Body() dto: AddStockDto, @Req() req: { user: { id: string } }) {
+    return this.stockService.addStock(dto, req.user.id);
   }
 
   @Post('adjust')
-  adjustStock(@Body() dto: AdjustStockDto) {
-    return this.stockService.adjustStock(dto);
+  adjustStock(@Body() dto: AdjustStockDto, @Req() req: { user: { id: string } }) {
+    return this.stockService.adjustStock(dto, req.user.id);
   }
 }
