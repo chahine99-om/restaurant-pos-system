@@ -16,7 +16,16 @@ export default function Login({ onSuccess }: { onSuccess: () => void }) {
       localStorage.setItem('token', data.accessToken);
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      const msg = err instanceof Error ? err.message : 'Login failed';
+      const isNetwork =
+        msg.includes('fetch') ||
+        msg.includes('Network') ||
+        (err instanceof TypeError && err.message.includes('fetch'));
+      setError(
+        isNetwork
+          ? 'Cannot reach the server. Start the API (npm run start:dev) and ensure the database is running (see README).'
+          : msg,
+      );
     } finally {
       setLoading(false);
     }
@@ -47,6 +56,9 @@ export default function Login({ onSuccess }: { onSuccess: () => void }) {
           />
         </div>
         {error && <p style={{ color: 'crimson', fontSize: 14, marginBottom: 8 }}>{error}</p>}
+        <p style={{ fontSize: 12, color: '#666', marginBottom: 12 }}>
+          Demo: cashier@restaurant.local / Password123!
+        </p>
         <button type="submit" disabled={loading} style={{ width: '100%', padding: 10 }}>
           {loading ? '...' : 'Login'}
         </button>

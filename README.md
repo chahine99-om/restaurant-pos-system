@@ -107,3 +107,9 @@ npm run dev
 Open http://localhost:5173. The Vite dev server proxies `/api` to the backend (port 3000). Login with seed user (e.g. cashier@restaurant.local / Password123!), then use the POS to add dishes to cart and confirm with cash payment; stock is deducted automatically.
 
 For production builds, set `VITE_API_URL` to your API base URL (e.g. `https://api.example.com`) before `npm run build`.
+
+### Can't log in?
+
+1. **"Cannot reach the server"** – Start the backend: from project root run `npm run start:dev`. The API must be running on port 3000. If it exits with a database error, set up PostgreSQL (see Database step above: Docker or local DB + migrate + seed).
+2. **"Invalid credentials"** – Use the seed users exactly: **cashier@restaurant.local** or **admin@restaurant.local**, password **Password123!** (capital P, exclamation mark). If you changed the seed or never ran it, run `npm run prisma:seed`.
+3. **Blank or CORS error** – Ensure you have a `.env` file (copy from `.env.example`) and that `CORS_ORIGINS` includes `http://localhost:5173`, or leave it unset (dev fallback allows it).

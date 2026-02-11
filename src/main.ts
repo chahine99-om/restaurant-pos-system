@@ -10,9 +10,11 @@ async function bootstrap() {
   // Security: HTTP headers (XSS, etc.)
   app.use(helmet());
 
-  // CORS: strict origins only (from env, never *)
-  const origins = process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean) ?? [];
-  app.enableCors({ origin: origins.length ? origins : false, credentials: true });
+  // CORS: strict origins only (from env). Dev fallback so login works without .env.
+  const fromEnv = process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean) ?? [];
+  const origins =
+    fromEnv.length > 0 ? fromEnv : ['http://localhost:3000', 'http://localhost:5173'];
+  app.enableCors({ origin: origins, credentials: true });
 
   // Centralized validation (DTOs with class-validator)
   app.useGlobalPipes(
