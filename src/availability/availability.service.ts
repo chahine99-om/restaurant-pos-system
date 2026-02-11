@@ -26,7 +26,7 @@ export class AvailabilityService {
     for (const ri of product.recipe.recipeIngredients) {
       const stockQty = ri.ingredient.stock?.quantityGrams ?? 0;
       const req = ri.quantityGrams;
-      if (req <= 0) continue;
+      if (Number(req) <= 0) continue;
       const num = Number(stockQty) / Number(req);
       const floor = Math.floor(num);
       if (floor < minDishes) minDishes = floor;

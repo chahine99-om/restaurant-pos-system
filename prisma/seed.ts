@@ -48,23 +48,29 @@ async function main() {
     });
   }
 
-  const recipe = await prisma.recipe.create({
-    data: {
-      name: 'Maxi Crispy',
-      recipeIngredients: {
-        create: [
-          { ingredientId: chicken.id, quantityGrams: 300 },
-          { ingredientId: breadcrumbs.id, quantityGrams: 10 },
-          { ingredientId: spices.id, quantityGrams: 2 },
-          { ingredientId: tomatoes.id, quantityGrams: 20 },
-          { ingredientId: onions.id, quantityGrams: 10 },
-        ],
+  // Idempotent: reuse existing "Maxi Crispy" recipe or create
+  let recipe = await prisma.recipe.findFirst({ where: { name: 'Maxi Crispy' } });
+  if (!recipe) {
+    recipe = await prisma.recipe.create({
+      data: {
+        name: 'Maxi Crispy',
+        recipeIngredients: {
+          create: [
+            { ingredientId: chicken.id, quantityGrams: 300 },
+            { ingredientId: breadcrumbs.id, quantityGrams: 10 },
+            { ingredientId: spices.id, quantityGrams: 2 },
+            { ingredientId: tomatoes.id, quantityGrams: 20 },
+            { ingredientId: onions.id, quantityGrams: 10 },
+          ],
+        },
       },
-    },
-  });
+    });
+  }
 
-  await prisma.product.create({
-    data: { name: 'Maxi Crispy', recipeId: recipe.id, price: 12.5 },
+  await prisma.product.upsert({
+    where: { recipeId: recipe.id },
+    create: { name: 'Maxi Crispy', recipeId: recipe.id, price: 12.5 },
+    update: { price: 12.5 },
   });
 
   console.log('Seed completed.');

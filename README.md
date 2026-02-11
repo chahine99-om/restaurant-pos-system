@@ -20,10 +20,25 @@ cp .env.example .env
 
 ### 2. Database
 
+**Option A – Docker (recommended for local testing)**
+
 ```bash
-npm run prisma:migrate   # create DB and run migrations
-npm run prisma:seed      # seed roles, users, sample ingredients/recipe/product
+docker-compose up -d
+# Wait a few seconds for PostgreSQL to start, then:
+npm run prisma:migrate
+npm run prisma:seed
 ```
+
+**Option B – Existing PostgreSQL**
+
+Create a database named `restaurant_pos`, then set `DATABASE_URL` in `.env` and run:
+
+```bash
+npm run prisma:migrate
+npm run prisma:seed
+```
+
+Seed is idempotent: safe to run multiple times.
 
 ### 3. Run API
 
@@ -90,3 +105,5 @@ npm run dev
 ```
 
 Open http://localhost:5173. The Vite dev server proxies `/api` to the backend (port 3000). Login with seed user (e.g. cashier@restaurant.local / Password123!), then use the POS to add dishes to cart and confirm with cash payment; stock is deducted automatically.
+
+For production builds, set `VITE_API_URL` to your API base URL (e.g. `https://api.example.com`) before `npm run build`.

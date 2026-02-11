@@ -10,7 +10,11 @@ export async function login(email: string, password: string) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
   });
-  if (!res.ok) throw new Error((await res.json()).message || 'Login failed');
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}));
+    const msg = j.message;
+    throw new Error(Array.isArray(msg) ? msg[0] : msg || 'Login failed');
+  }
   return res.json();
 }
 
@@ -20,7 +24,11 @@ export async function getProductsPos() {
   const res = await fetch(`${BASE}/products/pos`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error('Failed to load products');
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}));
+    const msg = j.message;
+    throw new Error(Array.isArray(msg) ? msg[0] : msg || 'Failed to load products');
+  }
   return res.json();
 }
 
@@ -33,8 +41,9 @@ export async function createOrder(items: { productId: string; quantity: number }
     body: JSON.stringify({ items }),
   });
   if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data.message || 'Order failed');
+    const j = await res.json().catch(() => ({}));
+    const msg = j.message;
+    throw new Error(Array.isArray(msg) ? msg[0] : msg || 'Order failed');
   }
   return res.json();
 }
@@ -47,6 +56,10 @@ export async function confirmOrder(orderId: string, paymentMethod: 'CASH') {
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({ paymentMethod }),
   });
-  if (!res.ok) throw new Error('Confirm failed');
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}));
+    const msg = j.message;
+    throw new Error(Array.isArray(msg) ? msg[0] : msg || 'Confirm failed');
+  }
   return res.json();
 }
