@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { login } from './api';
 
 export default function Login({ onSuccess }: { onSuccess: () => void }) {
@@ -63,6 +64,9 @@ export default function Login({ onSuccess }: { onSuccess: () => void }) {
           {loading ? '...' : 'Login'}
         </button>
       </form>
+      <p style={{ marginTop: 16, fontSize: 14 }}>
+        No account? <Link to="/register">Create one</Link>
+      </p>
     </div>
   );
 }

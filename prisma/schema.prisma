@@ -27,20 +27,24 @@ model Role {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String   // bcrypt hash only - never returned in API
-  fullName  String
-  roleId    String
-  role      Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                           String    @id @default(uuid())
+  email                        String    @unique
+  password                     String    // bcrypt hash only - never returned in API
+  fullName                     String
+  roleId                       String
+  role                         Role      @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  isActive                     Boolean   @default(true)
+  emailVerifiedAt              DateTime?
+  verificationToken            String?   @unique
+  verificationTokenExpiresAt   DateTime?
+  createdAt                    DateTime  @default(now())
+  updatedAt                    DateTime  @updatedAt
 
   orders Order[]
 
   @@index([email])
   @@index([roleId])
+  @@index([verificationToken])
 }
 
 // --- Products (Dishes) ---

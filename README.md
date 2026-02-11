@@ -38,7 +38,7 @@ npm run prisma:migrate
 npm run prisma:seed
 ```
 
-Seed is idempotent: safe to run multiple times.
+Seed is idempotent: safe to run multiple times. If you already had a database, run `npm run prisma:migrate` again to add the email verification columns.
 
 ### 3. Run API
 
@@ -59,7 +59,9 @@ API base: `http://localhost:3000`
 
 ## API Overview
 
-- **POST /auth/login** – Body: `{ "email", "password" }` → `{ accessToken, user }`
+- **POST /auth/register** – Body: `{ "email", "password", "fullName" }` → creates account, sends verification email (or returns `verificationLink` if no SMTP). User must verify before login.
+- **GET /auth/verify-email?token=...** – Verifies email; returns `{ message, email }`.
+- **POST /auth/login** – Body: `{ "email", "password" }` → `{ accessToken, user }` (only if email is verified)
 - **GET /products/pos** – Products for POS with `availableQuantity` (Admin + Cashier)
 - **POST /orders** – Create order (items: `{ productId, quantity }`)
 - **POST /orders/:id/confirm** – Confirm and pay (body: `{ "paymentMethod": "CASH" }`), deducts stock
@@ -104,7 +106,11 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. The Vite dev server proxies `/api` to the backend (port 3000). Login with seed user (e.g. cashier@restaurant.local / Password123!), then use the POS to add dishes to cart and confirm with cash payment; stock is deducted automatically.
+Open http://localhost:5173. The Vite dev server proxies `/api` to the backend (port 3000).
+
+- **Login:** Use seed user (cashier@restaurant.local / Password123!) or an account you created and verified.
+- **Create account:** Click "Create one" → register with email and password → you'll see a verification link (if no SMTP, copy the link from the success message or from the API console log) → open it to verify → then log in.
+- **POS:** Add dishes to cart, confirm with cash payment; stock is deducted automatically.
 
 For production builds, set `VITE_API_URL` to your API base URL (e.g. `https://api.example.com`) before `npm run build`.
 

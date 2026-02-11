@@ -21,15 +21,28 @@ async function main() {
   });
 
   const hash = await bcrypt.hash('Password123!', 10);
+  const now = new Date();
   await prisma.user.upsert({
     where: { email: 'admin@restaurant.local' },
-    create: { email: 'admin@restaurant.local', password: hash, fullName: 'Admin', roleId: adminRole.id },
-    update: { password: hash },
+    create: {
+      email: 'admin@restaurant.local',
+      password: hash,
+      fullName: 'Admin',
+      roleId: adminRole.id,
+      emailVerifiedAt: now,
+    },
+    update: { password: hash, emailVerifiedAt: now },
   });
   await prisma.user.upsert({
     where: { email: 'cashier@restaurant.local' },
-    create: { email: 'cashier@restaurant.local', password: hash, fullName: 'Cashier', roleId: cashierRole.id },
-    update: { password: hash },
+    create: {
+      email: 'cashier@restaurant.local',
+      password: hash,
+      fullName: 'Cashier',
+      roleId: cashierRole.id,
+      emailVerifiedAt: now,
+    },
+    update: { password: hash, emailVerifiedAt: now },
   });
 
   const chicken = await prisma.ingredient.upsert({ where: { name: 'Chicken' }, create: { name: 'Chicken', unit: 'g' }, update: {} });
